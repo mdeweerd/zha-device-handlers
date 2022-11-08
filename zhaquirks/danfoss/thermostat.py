@@ -18,18 +18,29 @@ from zigpy.zcl.clusters.general import (
 from zigpy.zcl.clusters.homeautomation import Diagnostic
 from zigpy.zcl.clusters.hvac import Thermostat, UserInterface
 
+from zhaquirks import EventableCluster
 from zhaquirks.const import (
+    ARGS,
+    ATTRIBUTE_ID,
+    ATTRIBUTE_NAME,
+    CLUSTER_ID,
+    COMMAND,
+    COMMAND_ATTRIBUTE_UPDATED,
     DEVICE_TYPE,
+    ENDPOINT_ID,
     ENDPOINTS,
     INPUT_CLUSTERS,
     MODELS_INFO,
     OUTPUT_CLUSTERS,
     PROFILE_ID,
+    TURN_OFF,
+    TURN_ON,
+    VALUE,
 )
 from zhaquirks.danfoss import D5X84YU, DANFOSS
 
 
-class DanfossThermostatCluster(CustomCluster, Thermostat):
+class DanfossThermostatCluster(EventableCluster, Thermostat):
     """Danfoss custom cluster."""
 
     server_commands = Thermostat.server_commands.copy()
@@ -115,6 +126,9 @@ class DanfossDiagnosticCluster(CustomCluster, Diagnostic):
     )
 
 
+HEATING_REQUEST = "heating_request"
+
+
 class DanfossThermostat(CustomDevice):
     """DanfossThermostat custom device."""
 
@@ -158,4 +172,27 @@ class DanfossThermostat(CustomDevice):
                 OUTPUT_CLUSTERS: [Basic, Ota],
             }
         }
+    }
+
+    device_automation_triggers = {
+        (HEATING_REQUEST, TURN_ON): {
+            ENDPOINT_ID: 1,
+            CLUSTER_ID: Thermostat.cluster_id,
+            COMMAND: COMMAND_ATTRIBUTE_UPDATED,
+            ARGS: {
+                ATTRIBUTE_ID: 0x4031,
+                ATTRIBUTE_NAME: "heat_supply_request",
+                VALUE: 1,
+            },
+        },
+        (HEATING_REQUEST, TURN_OFF): {
+            ENDPOINT_ID: 1,
+            CLUSTER_ID: Thermostat.cluster_id,
+            COMMAND: COMMAND_ATTRIBUTE_UPDATED,
+            ARGS: {
+                ATTRIBUTE_ID: 0x4031,
+                ATTRIBUTE_NAME: "heat_supply_request",
+                VALUE: 0,
+            },
+        },
     }
